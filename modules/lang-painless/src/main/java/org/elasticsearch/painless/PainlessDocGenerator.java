@@ -42,8 +42,6 @@ import static java.util.stream.Collectors.toList;
  * Generates an API reference from the method and type whitelists in {@link Definition}.
  */
 public class PainlessDocGenerator {
-    private static final Comparator<Type> TYPE_SORT = comparing((Type t) -> t.name.equals("def")).reversed() 
-            .thenComparing(comparing(t -> t.name));
     private static final Comparator<Method> METHOD_NAME = comparing(m -> m.name);
     private static final Comparator<Method> NUMBER_OF_ARGS = comparing(m -> m.arguments.size());
 
@@ -57,26 +55,32 @@ public class PainlessDocGenerator {
         Path indexPath = apiRootPath.resolve("index.asciidoc");
         System.out.println("Starting to write " + indexPath);
         try (PrintStream indexStream = new PrintStream(indexPath.toFile(), StandardCharsets.UTF_8.name())) {
-            List<Type> types = Definition.allSimpleTypes().stream().sorted(TYPE_SORT).collect(toList());
+            List<Type> types = Definition.allSimpleTypes().stream().sorted(comparing(t -> t.name)).collect(toList());
             for (Type type : types) {
                 if (type.sort.primitive) {
+                    // Primitives don't have methods to reference
+                    continue;
+                }
+                if ("def".equals(type.name)) {
+                    // def is special but doesn't have any methods all of its own.
                     continue;
                 }
                 indexStream.print("include::");
                 indexStream.print(type.struct.name);
                 indexStream.println(".asciidoc[]");
 
-                Path structPath = apiRootPath.resolve(type.struct.name + ".asciidoc");
+                Path typePath = apiRootPath.resolve(type.struct.name + ".asciidoc");
                 System.out.println("Writing " + type.name);
-                try (PrintStream structStream = new PrintStream(structPath.toFile(), StandardCharsets.UTF_8.name())) {
-                    structStream.print("* [[");
-                    emitAnchor(structStream, type);
-                    structStream.print("]]");
-                    structStream.println(type.name);
-                    Consumer<Method> documentMethod = method -> PainlessDocGenerator.documentMethod(structStream, type, method);
+                try (PrintStream typeStream = new PrintStream(typePath.toFile(), StandardCharsets.UTF_8.name())) {
+                    typeStream.print("* [[");
+                    emitAnchor(typeStream, type);
+                    typeStream.print("]]");
+                    typeStream.println(type.name);
+                    Consumer<Method> documentMethod = method -> PainlessDocGenerator.documentMethod(typeStream, type, method);
                     type.struct.staticMethods.values().stream().sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(documentMethod);
                     type.struct.constructors.values().stream().sorted(NUMBER_OF_ARGS).forEach(documentMethod);
-                    type.struct.methods.values().stream().sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(documentMethod);
+                    type.struct.methods.values().stream().filter(m -> m.owner == type.struct)
+                            .sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(documentMethod);
                     // NOCOMMIT methods inherited
                     // NOCOMMIT fields and static fields
                 }
@@ -92,47 +96,47 @@ public class PainlessDocGenerator {
      * the {@code receiver} declared the method.
      * @param method method we are documenting
      */
-    private static void documentMethod(PrintStream structStream, Type receiver, Method method) {
+    private static void documentMethod(PrintStream stream, Type receiver, Method method) {
         // NOCOMMIT little chain icon for linking
         // NOCOMMIT augments
-        structStream.print("** [[");
-        emitAnchor(structStream, receiver, method);
-        structStream.print("]]");
+        stream.print("** [[");
+        emitAnchor(stream, receiver, method);
+        stream.print("]]");
 
         if (Modifier.isStatic(method.modifiers)) {
-            structStream.print("static ");
+            stream.print("static ");
         }
 
         if (false == method.name.equals("<init>")) {
-            emitType(structStream, method.rtn);
-            structStream.print(' ');
+            emitType(stream, method.rtn);
+            stream.print(' ');
         }
 
         String javadocRoot = javadocRoot(method.owner);
-        emitJavadocLink(structStream, javadocRoot, method);
-        structStream.print('[');
+        emitJavadocLink(stream, javadocRoot, method);
+        stream.print('[');
 
-        structStream.print(methodName(method));
+        stream.print(methodName(method));
 
-        structStream.print("](");
+        stream.print("](");
         boolean first = true;
         for (Type arg : method.arguments) {
             if (first) {
                 first = false;
             } else {
-                structStream.print(", ");
+                stream.print(", ");
             }
-            emitType(structStream, arg);
+            emitType(stream, arg);
         }
-        structStream.print(")");
+        stream.print(")");
 
         if (javadocRoot.equals("java8")) {
-            structStream.print(" (");
-            emitJavadocLink(structStream, "java9", method);
-            structStream.print("[java 9])");
+            stream.print(" (");
+            emitJavadocLink(stream, "java9", method);
+            stream.print("[java 9])");
         }
 
-        structStream.println();
+        stream.println();
     }
 
     /**
@@ -167,20 +171,20 @@ public class PainlessDocGenerator {
      * Emit a type. If the type is primitive or an array of primitives this just emits the text of the type. Otherwise this emits an
      * internal link with the text.
      */
-    private static void emitType(PrintStream structStream, Type type) {
-        // Use type.struct.clazz.isPrimitive() instead of type.sort.primitive because the former doesn't link to primitive arrays
+    private static void emitType(PrintStream stream, Type type) {
+        // Use type.struct.clazz.isPrimitive() instead of type.sort.primitive so we don't link to primitive arrays
         if (false == type.struct.clazz.isPrimitive()) {
-            structStream.print("<<");
-            emitAnchor(structStream, type);
-            structStream.print(',');
+            stream.print("<<");
+            emitAnchor(stream, type);
+            stream.print(',');
         }
         // Use the struct name instead of the type name because the type name includes array markers ([]) that we don't want
-        structStream.print(type.struct.name);
+        stream.print(type.struct.name);
         if (false == type.struct.clazz.isPrimitive()) {
-            structStream.print(">>");
+            stream.print(">>");
         }
         for (int i = 0; i < type.dimensions; i++) {
-            structStream.print("[]");
+            stream.print("[]");
         }
     }
 
@@ -190,23 +194,23 @@ public class PainlessDocGenerator {
      * @param root name of the root uri variable
      * @param method the method to link to
      */
-    private static void emitJavadocLink(PrintStream structStream, String root, Method method) {
-        structStream.print("link:{");
-        structStream.print(root);
-        structStream.print("-javadoc}/");
-        structStream.print(method.owner.clazz.getName().replace('.', '/'));
-        structStream.print(".html#");
-        structStream.print(methodName(method));
-        structStream.print("%2D");
+    private static void emitJavadocLink(PrintStream stream, String root, Method method) {
+        stream.print("link:{");
+        stream.print(root);
+        stream.print("-javadoc}/");
+        stream.print(method.owner.clazz.getName().replace('.', '/'));
+        stream.print(".html#");
+        stream.print(methodName(method));
+        stream.print("%2D");
         for (Type arg: method.arguments) {
-            structStream.print(arg.struct.clazz.getName());
+            stream.print(arg.struct.clazz.getName());
             if (arg.dimensions > 0) {
-                structStream.print(":A");
+                stream.print(":A");
             }
-            structStream.print("%2D");
+            stream.print("%2D");
         }
         if (method.arguments.isEmpty()) {
-            structStream.print("%2D");
+            stream.print("%2D");
         }
     }
 
