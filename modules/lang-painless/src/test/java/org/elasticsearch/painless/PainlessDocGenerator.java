@@ -201,7 +201,7 @@ public class PainlessDocGenerator {
      * Anchor text for a {@link Struct}.
      */
     private static void emitAnchor(PrintStream stream, Struct struct) {
-        stream.print("painless-api-reference");
+        stream.print("painless-api-reference-");
         // Use the struct's name because it doesn't include any array markers ([]) which we never want to include in these anchors
         stream.print(struct.name.replace('.', '-'));
     }
