@@ -115,12 +115,11 @@ public class PainlessDocGenerator {
      */
     private static void documentMethod(PrintStream stream, Method method) {
         // NOCOMMIT little chain icon for linking
-        // NOCOMMIT augments
         stream.print("** [[");
         emitAnchor(stream, method);
         stream.print("]]");
 
-        if (Modifier.isStatic(method.modifiers)) {
+        if (false == method.augmentation && Modifier.isStatic(method.modifiers)) {
             stream.print("static ");
         }
 
@@ -129,7 +128,7 @@ public class PainlessDocGenerator {
             stream.print(' ');
         }
 
-        String javadocRoot = javadocRoot(method.owner);
+        String javadocRoot = javadocRoot(method);
         emitJavadocLink(stream, javadocRoot, method);
         stream.print('[');
 
@@ -217,27 +216,38 @@ public class PainlessDocGenerator {
         stream.print("link:{");
         stream.print(root);
         stream.print("-javadoc}/");
-        stream.print(method.owner.clazz.getName().replace('.', '/'));
+        stream.print((method.augmentation ? Augmentation.class : method.owner.clazz).getName().replace('.', '/'));
         stream.print(".html#");
         stream.print(methodName(method));
         stream.print("%2D");
+        boolean first = true;
+        if (method.augmentation) {
+            first = false;
+            stream.print(method.owner.clazz.getName());
+            stream.print("%2D");
+        }
         for (Type arg: method.arguments) {
+            if (first) {
+                first = false;
+            } else {
+                stream.print("%2D");
+            }
             stream.print(arg.struct.clazz.getName());
             if (arg.dimensions > 0) {
                 stream.print(":A");
             }
-            stream.print("%2D");
         }
-        if (method.arguments.isEmpty()) {
-            stream.print("%2D");
-        }
+        stream.print("%2D");
     }
 
     /**
      * Pick the javadoc root for some type.
      */
-    private static String javadocRoot(Struct struct) {
-        String classPackage = struct.clazz.getPackage().getName();
+    private static String javadocRoot(Method method) {
+        if (method.augmentation) {
+            return "painless";
+        }
+        String classPackage = method.owner.clazz.getPackage().getName();
         if (classPackage.startsWith("java")) {
             return "java8";
         }
