@@ -63,3 +63,5 @@ include::glossary.asciidoc[]
 //////
 
 include::redirects.asciidoc[]
+
+include::painless-api-reference.asciidoc[]

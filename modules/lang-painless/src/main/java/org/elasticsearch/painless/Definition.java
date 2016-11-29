@@ -33,6 +33,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -501,6 +502,11 @@ public final class Definition {
 
     public static RuntimeClass getRuntimeClass(Class<?> clazz) {
         return INSTANCE.runtimeMap.get(clazz);
+    }
+
+    /** Collection of all simple types. Used by {@link PainlessDocGenerator} to generate an API reference. */
+    static Collection<Type> allSimpleTypes() {
+        return INSTANCE.simpleTypesMap.values();
     }
 
     // INTERNAL IMPLEMENTATION:

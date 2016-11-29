@@ -18,6 +18,7 @@
  */
 
 import org.apache.tools.ant.types.Path
+import org.gradle.api.file.FileTree
 
 esplugin {
   description 'An easy, safe and fast scripting language for Elasticsearch'
@@ -51,4 +52,14 @@ integTest {
   cluster {
     setting 'script.max_compilations_per_minute', '1000'
   }
+}
+
+task generatePainlessApi(type:JavaExec) {
+  // FileTree whitelists = fileTree('src/main/resources/org/elasticsearch/painless')
+  // whitelists.include('*.txt')
+  // inputs.files(whitelists)
+
+  main = 'org.elasticsearch.painless.PainlessDocGenerator'
+  classpath = sourceSets.main.runtimeClasspath
+  args file('../../docs/reference/painless-api-reference')
 }

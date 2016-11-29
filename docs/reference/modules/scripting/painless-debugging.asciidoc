@@ -88,19 +88,5 @@ The response looks like:
 // TESTRESPONSE[s/\.\.\./"script_stack": $body.error.caused_by.script_stack, "script": $body.error.caused_by.script, "lang": $body.error.caused_by.lang, "caused_by": $body.error.caused_by.caused_by, "reason": $body.error.caused_by.reason/]
 // TESTRESPONSE[s/"to_string": ".+"/"to_string": $body.error.caused_by.to_string/]
 
-// TODO we should build some javadoc like mashup so people don't have to jump through these hoops.
-
-Once you have the class of an object you can go
-https://github.com/elastic/elasticsearch/tree/{branch}/modules/lang-painless/src/main/resources/org/elasticsearch/painless[here]
-and check the available methods. Painless uses a strict whitelist to prevent
-scripts that don't work well with Elasticsearch and all whitelisted methods
-are listed in a file named after the package of the object (everything before
-the last `.`). So `java.util.Map` is listed in a file named `java.util.txt`
-starting on the line that looks like `class Map -> java.util.Map {`.
-
-With the list of whitelisted methods in hand you can turn to either
-https://docs.oracle.com/javase/8/docs/api/[Javadoc],
-https://github.com/elastic/elasticsearch/tree/{branch}[Elasticsearch's source tree]
-or, for whitelisted methods ending in `*`, the
-https://github.com/elastic/elasticsearch/blob/{branch}/modules/lang-painless/src/main/java/org/elasticsearch/painless/Augmentation.java[Augmentation]
-class.
+Once you have a class you can go to <<Painless API Reference>> to see a list of
+available methods.
