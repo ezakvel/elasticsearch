@@ -20,6 +20,7 @@
 package org.elasticsearch.painless;
 
 import org.apache.lucene.util.IOUtils;
+import org.elasticsearch.common.SuppressForbidden;
 import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.painless.Definition.Field;
 import org.elasticsearch.painless.Definition.Method;
@@ -32,6 +33,7 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -46,7 +48,6 @@ import static java.util.stream.Collectors.toList;
  */
 public class PainlessDocGenerator {
     private static final Comparator<Field> FIELD_NAME = comparing(f -> f.name);
-
     private static final Comparator<Method> METHOD_NAME = comparing(m -> m.name);
     private static final Comparator<Method> NUMBER_OF_ARGS = comparing(m -> m.arguments.size());
 
@@ -58,8 +59,10 @@ public class PainlessDocGenerator {
         Files.createDirectories(apiRootPath);
 
         Path indexPath = apiRootPath.resolve("index.asciidoc");
-        System.out.println("Starting to write " + indexPath);
-        try (PrintStream indexStream = new PrintStream(indexPath.toFile(), StandardCharsets.UTF_8.name())) {
+        println("Starting to write " + indexPath);
+        try (PrintStream indexStream = new PrintStream(
+                Files.newOutputStream(indexPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
+                false, StandardCharsets.UTF_8.name())) {
             List<Type> types = Definition.allSimpleTypes().stream().sorted(comparing(t -> t.name)).collect(toList());
             for (Type type : types) {
                 if (type.sort.primitive) {
@@ -75,8 +78,10 @@ public class PainlessDocGenerator {
                 indexStream.println(".asciidoc[]");
 
                 Path typePath = apiRootPath.resolve(type.struct.name + ".asciidoc");
-                System.out.println("Writing " + type.name);
-                try (PrintStream typeStream = new PrintStream(typePath.toFile(), StandardCharsets.UTF_8.name())) {
+                println("Writing " + type.name);
+                try (PrintStream typeStream = new PrintStream(
+                        Files.newOutputStream(typePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
+                        false, StandardCharsets.UTF_8.name())) {
                     typeStream.print("* [[");
                     emitAnchor(typeStream, type.struct);
                     typeStream.print("]]");
@@ -112,7 +117,12 @@ public class PainlessDocGenerator {
                 }
             }
         }
-        System.out.println("Done writing " + indexPath);
+        println("Done writing " + indexPath);
+    }
+
+    @SuppressForbidden(reason="command line tool")
+    private static void println(String s) {
+        System.out.println(s);
     }
 
     private static void documentField(PrintStream stream, Field field) {
@@ -251,7 +261,6 @@ public class PainlessDocGenerator {
      * Emit an external link to Javadoc for a {@link Method}.
      *
      * @param root name of the root uri variable
-     * @param method the method to link to
      */
     private static void emitJavadocLink(PrintStream stream, String root, Method method) {
         stream.print("link:{");
@@ -282,10 +291,9 @@ public class PainlessDocGenerator {
     }
 
     /**
-     * Emit an external link to Javadoc for a {@link Method}.
+     * Emit an external link to Javadoc for a {@link Field}.
      *
      * @param root name of the root uri variable
-     * @param method the method to link to
      */
     private static void emitJavadocLink(PrintStream stream, String root, Field field) {
         stream.print("link:{");

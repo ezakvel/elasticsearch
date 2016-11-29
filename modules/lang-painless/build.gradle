@@ -55,11 +55,7 @@ integTest {
 }
 
 task generatePainlessApi(type:JavaExec) {
-  // FileTree whitelists = fileTree('src/main/resources/org/elasticsearch/painless')
-  // whitelists.include('*.txt')
-  // inputs.files(whitelists)
-
   main = 'org.elasticsearch.painless.PainlessDocGenerator'
-  classpath = sourceSets.main.runtimeClasspath
+  classpath = sourceSets.test.runtimeClasspath
   args file('../../docs/reference/painless-api-reference')
 }
