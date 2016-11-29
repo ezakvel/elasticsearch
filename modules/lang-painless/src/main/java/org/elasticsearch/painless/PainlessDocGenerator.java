@@ -33,6 +33,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static java.util.Comparator.comparing;
@@ -73,15 +75,34 @@ public class PainlessDocGenerator {
                 System.out.println("Writing " + type.name);
                 try (PrintStream typeStream = new PrintStream(typePath.toFile(), StandardCharsets.UTF_8.name())) {
                     typeStream.print("* [[");
-                    emitAnchor(typeStream, type);
+                    emitAnchor(typeStream, type.struct);
                     typeStream.print("]]");
                     typeStream.println(type.name);
-                    Consumer<Method> documentMethod = method -> PainlessDocGenerator.documentMethod(typeStream, type, method);
+                    Consumer<Method> documentMethod = method -> PainlessDocGenerator.documentMethod(typeStream, method);
                     type.struct.staticMethods.values().stream().sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(documentMethod);
                     type.struct.constructors.values().stream().sorted(NUMBER_OF_ARGS).forEach(documentMethod);
-                    type.struct.methods.values().stream().filter(m -> m.owner == type.struct)
-                            .sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(documentMethod);
-                    // NOCOMMIT methods inherited
+                    Map<String, Struct> inherited = new TreeMap<>();
+                    type.struct.methods.values().stream().sorted(METHOD_NAME.thenComparing(NUMBER_OF_ARGS)).forEach(method -> {
+                        if (method.owner == type.struct) {
+                            documentMethod(typeStream, method);
+                        } else {
+                            inherited.put(method.owner.name, method.owner);
+                        }
+                    });
+
+                    if (false == inherited.isEmpty()) {
+                        typeStream.print("** Inherits methods from ");
+                        boolean first = true;
+                        for (Struct inheritsFrom : inherited.values()) {
+                            if (first) {
+                                first = false;
+                            } else {
+                                typeStream.print(", ");
+                            }
+                            emitStruct(typeStream, inheritsFrom);
+                        }
+                        typeStream.println();
+                    }
                     // NOCOMMIT fields and static fields
                 }
             }
@@ -91,16 +112,12 @@ public class PainlessDocGenerator {
 
     /**
      * Document a method.
-     *
-     * @param receiver the type for which we are documenting the method. This is only the same as {@code method}'s {@link Method#owner} if
-     * the {@code receiver} declared the method.
-     * @param method method we are documenting
      */
-    private static void documentMethod(PrintStream stream, Type receiver, Method method) {
+    private static void documentMethod(PrintStream stream, Method method) {
         // NOCOMMIT little chain icon for linking
         // NOCOMMIT augments
         stream.print("** [[");
-        emitAnchor(stream, receiver, method);
+        emitAnchor(stream, method);
         stream.print("]]");
 
         if (Modifier.isStatic(method.modifiers)) {
@@ -142,21 +159,17 @@ public class PainlessDocGenerator {
     /**
      * Anchor text for a type.
      */
-    private static void emitAnchor(PrintStream stream, Type type) {
+    private static void emitAnchor(PrintStream stream, Struct struct) {
         stream.print("painless-api-");
         // Use the struct's name because it doesn't include any array markers ([]) which we never want to include in these anchors
-        stream.print(type.struct.name.replace('.', '-'));
+        stream.print(struct.name.replace('.', '-'));
     }
 
     /**
      * Anchor text for a method.
-     *
-     * @param receiver the type for which we are anchoring. This is only the same as {@code method}'s {@link Method#owner} if the
-     *        {@code receiver} declared the method.
-     * @param method method anchor to emit
      */
-    private static void emitAnchor(PrintStream stream, Type receiver, Method method) {
-        emitAnchor(stream, receiver);
+    private static void emitAnchor(PrintStream stream, Method method) {
+        emitAnchor(stream, method.owner);
         stream.print('-');
         stream.print(methodName(method));
         stream.print('-');
@@ -168,23 +181,29 @@ public class PainlessDocGenerator {
     }
 
     /**
-     * Emit a type. If the type is primitive or an array of primitives this just emits the text of the type. Otherwise this emits an
+     * Emit a {@link Type}. If the type is primitive or an array of primitives this just emits the name of the type. Otherwise this emits an
      * internal link with the text.
      */
     private static void emitType(PrintStream stream, Type type) {
-        // Use type.struct.clazz.isPrimitive() instead of type.sort.primitive so we don't link to primitive arrays
-        if (false == type.struct.clazz.isPrimitive()) {
-            stream.print("<<");
-            emitAnchor(stream, type);
-            stream.print(',');
-        }
-        // Use the struct name instead of the type name because the type name includes array markers ([]) that we don't want
-        stream.print(type.struct.name);
-        if (false == type.struct.clazz.isPrimitive()) {
-            stream.print(">>");
-        }
+        emitStruct(stream, type.struct);
         for (int i = 0; i < type.dimensions; i++) {
             stream.print("[]");
+        }
+    }
+
+    /**
+     * Emit a {@link Struct}. If the {@linkplain Struct} is primitive or def this just emits the name of the struct. Otherwise this emits an
+     * internal link with the name.
+     */
+    private static void emitStruct(PrintStream stream, Struct struct) {
+        if (false == struct.clazz.isPrimitive() && false == struct.name.equals("def")) {
+            stream.print("<<");
+            emitAnchor(stream, struct);
+            stream.print(',');
+            stream.print(struct.name);
+            stream.print(">>");
+        } else {
+            stream.print(struct.name);
         }
     }
 
