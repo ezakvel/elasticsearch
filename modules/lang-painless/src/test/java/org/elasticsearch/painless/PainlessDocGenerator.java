@@ -63,6 +63,7 @@ public class PainlessDocGenerator {
         try (PrintStream indexStream = new PrintStream(
                 Files.newOutputStream(indexPath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
                 false, StandardCharsets.UTF_8.name())) {
+            indexStream.println("// Automatically generated. Do not edit.");
             List<Type> types = Definition.allSimpleTypes().stream().sorted(comparing(t -> t.name)).collect(toList());
             for (Type type : types) {
                 if (type.sort.primitive) {
@@ -82,10 +83,16 @@ public class PainlessDocGenerator {
                 try (PrintStream typeStream = new PrintStream(
                         Files.newOutputStream(typePath, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE),
                         false, StandardCharsets.UTF_8.name())) {
+                    typeStream.println("// Automatically generated. Do not edit.");
                     typeStream.print("* [[");
                     emitAnchor(typeStream, type.struct);
                     typeStream.print("]]");
-                    typeStream.println(type.name);
+                    typeStream.print(type.name);
+
+                    typeStream.print("[afterthought]##(");
+                    emitJavadocLink(typeStream, type.struct);
+                    typeStream.println("[reference])##");
+
                     Consumer<Field> documentField = field -> PainlessDocGenerator.documentField(typeStream, field);
                     Consumer<Method> documentMethod = method -> PainlessDocGenerator.documentMethod(typeStream, method);
                     type.struct.staticMembers.values().stream().sorted(FIELD_NAME).forEach(documentField);
@@ -202,7 +209,6 @@ public class PainlessDocGenerator {
      */
     private static void emitAnchor(PrintStream stream, Struct struct) {
         stream.print("painless-api-reference-");
-        // Use the struct's name because it doesn't include any array markers ([]) which we never want to include in these anchors
         stream.print(struct.name.replace('.', '-'));
     }
 
@@ -304,6 +310,17 @@ public class PainlessDocGenerator {
         stream.print(field.javaName);
     }
 
+    /**
+     * Emit an external link to Javadoc for a {@link Struct}.
+     */
+    private static void emitJavadocLink(PrintStream stream, Struct struct) {
+        stream.print("link:{");
+        stream.print(javadocRoot(struct));
+        stream.print("-javadoc}/");
+        stream.print(struct.clazz.getName().replace('.', '/'));
+        stream.print(".html#");
+        stream.print(struct.name);
+    }
 
     /**
      * Pick the javadoc root for a {@link Method}.
@@ -323,10 +340,10 @@ public class PainlessDocGenerator {
     }
 
     /**
-     * Pick the javadoc root for a {@link Struct} on which a {@link Method} of {@link Field} is declared.
+     * Pick the javadoc root for a {@link Struct}.
      */
-    private static String javadocRoot(Struct owner) {
-        String classPackage = owner.clazz.getPackage().getName();
+    private static String javadocRoot(Struct struct) {
+        String classPackage = struct.clazz.getPackage().getName();
         if (classPackage.startsWith("java")) {
             return "java8";
         }

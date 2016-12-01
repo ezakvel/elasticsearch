@@ -1,3 +1,4 @@
+// Automatically generated. Do not edit.
 include::AbstractChronology.asciidoc[]
 include::AbstractCollection.asciidoc[]
 include::AbstractList.asciidoc[]
