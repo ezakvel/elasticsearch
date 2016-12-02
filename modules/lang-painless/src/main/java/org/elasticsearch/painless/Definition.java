@@ -504,7 +504,7 @@ public final class Definition {
         return INSTANCE.runtimeMap.get(clazz);
     }
 
-    /** Collection of all simple types. Used by {@link PainlessDocGenerator} to generate an API reference. */
+    /** Collection of all simple types. Used by {@code PainlessDocGenerator} to generate an API reference. */
     static Collection<Type> allSimpleTypes() {
         return INSTANCE.simpleTypesMap.values();
     }
