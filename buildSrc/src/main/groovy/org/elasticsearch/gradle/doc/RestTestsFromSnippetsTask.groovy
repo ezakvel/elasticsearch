@@ -161,10 +161,25 @@ public class RestTestsFromSnippetsTask extends SnippetsTask {
             if (false == test.continued) {
                 current.println('---')
                 current.println("\"line_$test.start\":")
+                /* Since all these features *could* be required by any doc test
+                 * and we can't tell here if they *are* required by this doc
+                 * test we emit a skip all of them in case this is picked up by
+                 * a test runner that doesn't support them. */
+                current.println("  - skip:")
+                current.println("      features: ")
+                current.println("        - catch_unauthorized")
+                current.println("        - embedded_stash_key")
+                current.println("        - headers")
+                current.println("        - stash_in_path")
+                current.println("        - warnings")
+                current.println("        - yaml")
             }
             if (test.skipTest) {
-                current.println("  - skip:")
-                current.println("      features: always_skip")
+                if (test.continued) {
+                    throw new InvalidUserDataException("Continued snippets "
+                        + "can't be skipped")
+                }
+                current.println("        - always_skip")
                 current.println("      reason: $test.skipTest")
             }
             if (test.setup != null) {
