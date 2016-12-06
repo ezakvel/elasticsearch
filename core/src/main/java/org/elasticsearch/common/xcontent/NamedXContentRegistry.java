@@ -73,12 +73,28 @@ public class NamedXContentRegistry {
      * registry.
      */
     public XContentParser wrap(XContentParser parser) {
-        return new DelegatingXContentParser(parser) {
-            @Override
-            public <T> T namedXContent(Class<T> categoryClass, String name, Object context) throws IOException {
-                return NamedXContentRegistry.this.getFromXContent(categoryClass, name, getTokenLocation()).fromXContent(this, context);
-            }
-        };
+        return new WrappedParser(parser, this);
+    }
+
+    public static class WrappedParser extends DelegatingXContentParser {
+        private final NamedXContentRegistry registry;
+
+        private WrappedParser(XContentParser delegate, NamedXContentRegistry registry) {
+            super(delegate);
+            this.registry = registry;
+        }
+
+        /**
+         * Wrap another parser in the same registry as this parser is wrapped in.
+         */
+        public XContentParser wrap(XContentParser parser) {
+            return registry.wrap(parser);
+        }
+
+        @Override
+        public <T> T namedXContent(Class<T> categoryClass, String name, Object context) throws IOException {
+            return registry.getFromXContent(categoryClass, name, getTokenLocation()).fromXContent(this, context);
+        }
     }
 
     /**
@@ -87,11 +103,13 @@ public class NamedXContentRegistry {
     private <T, C> FromXContent<? extends T, C> getFromXContent(Class<T> categoryClass, String name, XContentLocation location) {
         Map<String, FromXContent<?, ?>> parsers = registry.get(categoryClass);
         if (parsers == null) {
-            throw new ParsingException(location, "Unknown NamedXContent category [" + categoryClass.getName() + "]");
+            // UnsupportedOperationException because this is always a bug in Elasticsearch or a plugin
+            throw new UnsupportedOperationException("Unknown NamedXContent category [" + categoryClass.getName() + "]");
         }
         @SuppressWarnings("unchecked")
         FromXContent<? extends T, C> reader = (FromXContent<? extends T, C>) parsers.get(name);
         if (reader == null) {
+            // ParsingException because this is *likely* a misspelled component in a user provided query
             throw new ParsingException(location, "Unknown NamedXContent [" + categoryClass.getName() + "][" + name + "]");
         }
         return reader;

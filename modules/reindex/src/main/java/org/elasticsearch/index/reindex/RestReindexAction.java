@@ -33,6 +33,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.NamedXContentRegistry;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry.WrappedParser;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser.ValueType;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -82,7 +83,8 @@ public class RestReindexAction extends AbstractBaseReindexRestHandler<ReindexReq
             request.setRemoteInfo(buildRemoteInfo(source));
             XContentBuilder builder = XContentFactory.contentBuilder(parser.contentType());
             builder.map(source);
-            try (XContentParser innerParser = parser.contentType().xContent().createParser(builder.bytes())) {
+            NamedXContentRegistry.WrappedParser wrappedParser = (WrappedParser) parser;
+            try (XContentParser innerParser = wrappedParser.wrap(parser.contentType().xContent().createParser(builder.bytes()))) {
                 request.getSearchRequest().source().parseXContent(context.queryParseContext(innerParser),
                         context.searchRequestParsers.aggParsers, context.searchRequestParsers.suggesters,
                         context.searchRequestParsers.searchExtParsers);
@@ -123,7 +125,7 @@ public class RestReindexAction extends AbstractBaseReindexRestHandler<ReindexReq
     @Override
     protected ReindexRequest buildRequest(RestRequest request) throws IOException {
         ReindexRequest internal = new ReindexRequest(new SearchRequest(), new IndexRequest());
-        try (XContentParser xcontent = XContentFactory.xContent(request.content()).createParser(request.content())) {
+        try (XContentParser xcontent = xContentRegistry.wrap(XContentFactory.xContent(request.content()).createParser(request.content()))) {
             PARSER.parse(xcontent, internal, new ReindexParseContext(searchRequestParsers, parseFieldMatcher));
         }
         return internal;
