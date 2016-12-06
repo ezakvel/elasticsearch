@@ -19,6 +19,7 @@
 
 package org.elasticsearch.common.xcontent;
 
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.xcontent.support.DelegatingXContentParser;
 
@@ -79,13 +80,13 @@ public class NamedXContentRegistry {
 
     /**
      * Wrap {@code parserToWrap} with the registry from {@code wrappedParser} if {@code wrappedParser} was built with
-     * {@link #wrap(XContentParser)}, returning {@code parserToWrap} unchanged otherwise.
+     * {@link #wrap(XContentParser)}, throwing an exception otherwise.
      */
     public static XContentParser wrap(XContentParser wrappedParser, XContentParser parserToWrap) {
-        if (wrappedParser instanceof WrappedParser) {
-            return ((WrappedParser)wrappedParser).registry.wrap(parserToWrap);
+        if (false == wrappedParser instanceof WrappedParser) {
+            throw new ElasticsearchException("provided wrappedParser wasn't wrapped");
         }
-        return parserToWrap;
+        return ((WrappedParser)wrappedParser).registry.wrap(parserToWrap);
     }
 
     /**
