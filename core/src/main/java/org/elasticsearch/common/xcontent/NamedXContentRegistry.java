@@ -34,13 +34,20 @@ import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 
+/**
+ * Registry of "named" XContent parsers that can read using {@link XContentParser#namedXContent(Class, String, Object)}.
+ */
 public class NamedXContentRegistry {
+    /**
+     * Parses an object with the type {@code T} from parser.
+     */
     public interface FromXContent<T, C> {
-        /**
-         * Parses an object with the type T from parser.
-         */
         T fromXContent(XContentParser parser, C context) throws IOException;
     }
+
+    /**
+     * Entry that will be added to the registry.
+     */
     public static class Entry {
         /** The class that this entry can read. */
         public final Class<?> categoryClass;
@@ -48,23 +55,25 @@ public class NamedXContentRegistry {
         /** A name for the entry which is unique within the {@link #categoryClass}. */
         public final String name;
 
-        /** A reader capability of reading the entry's class. */
-        public final FromXContent<?, ?> reader;
+        /** A parser for which returns subclasses of {@link #categoryClass}. */
+        public final FromXContent<?, ?> fromXContent;
 
         /** Creates a new entry which can be stored by the registry. */
-        public <T> Entry(Class<T> categoryClass, String name, FromXContent<? extends T, ?> reader) {
+        public <T> Entry(Class<T> categoryClass, String name, FromXContent<? extends T, ?> fromXContent) {
             this.categoryClass = Objects.requireNonNull(categoryClass);
             this.name = Objects.requireNonNull(name);
-            this.reader = Objects.requireNonNull(reader);
+            this.fromXContent = Objects.requireNonNull(fromXContent);
         }
     }
-
     
     private final Map<Class<?>, Map<String, FromXContent<?, ?>>> registry;
 
+    /**
+     * Build the registry from a list of the entries that should be in it.
+     */
     public NamedXContentRegistry(List<Entry> entries) {
         registry = unmodifiableMap(entries.stream().collect(groupingBy(e -> e.categoryClass,
-                collectingAndThen(toMap(e -> e.name, e -> e.reader, (name, reader) -> {
+                collectingAndThen(toMap(e -> e.name, e -> e.fromXContent, (name, fromXContent) -> {
                     throw new IllegalArgumentException("[" + name + "] already registered");
                 }), Collections::unmodifiableMap))));
     }
@@ -120,5 +129,4 @@ public class NamedXContentRegistry {
             return registry.getFromXContent(categoryClass, name, getTokenLocation()).fromXContent(this, context);
         }
     }
-
 }
