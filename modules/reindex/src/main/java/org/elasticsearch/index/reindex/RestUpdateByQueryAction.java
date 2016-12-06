@@ -26,6 +26,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.ParseFieldMatcher;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.rest.RestController;
 import org.elasticsearch.rest.RestRequest;
 import org.elasticsearch.script.Script;
@@ -46,8 +47,8 @@ public class RestUpdateByQueryAction extends AbstractBulkByQueryRestHandler<Upda
 
     @Inject
     public RestUpdateByQueryAction(Settings settings, RestController controller,
-            SearchRequestParsers searchRequestParsers, ClusterService clusterService) {
-        super(settings, searchRequestParsers, clusterService, UpdateByQueryAction.INSTANCE);
+            SearchRequestParsers searchRequestParsers, NamedXContentRegistry xContentRegistry, ClusterService clusterService) {
+        super(settings, searchRequestParsers, xContentRegistry, clusterService, UpdateByQueryAction.INSTANCE);
         controller.registerHandler(POST, "/{index}/_update_by_query", this);
         controller.registerHandler(POST, "/{index}/{type}/_update_by_query", this);
     }

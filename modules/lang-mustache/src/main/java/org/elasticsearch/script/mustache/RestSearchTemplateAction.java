@@ -29,6 +29,7 @@ import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
@@ -81,11 +82,14 @@ public class RestSearchTemplateAction extends BaseRestHandler {
     }
 
     private final SearchRequestParsers searchRequestParsers;
+    private final NamedXContentRegistry xContentRegistry;
 
     @Inject
-    public RestSearchTemplateAction(Settings settings, RestController controller, SearchRequestParsers searchRequestParsers) {
+    public RestSearchTemplateAction(Settings settings, RestController controller, SearchRequestParsers searchRequestParsers,
+            NamedXContentRegistry xContentRegistry) {
         super(settings);
         this.searchRequestParsers = searchRequestParsers;
+        this.xContentRegistry = xContentRegistry;
 
         controller.registerHandler(GET, "/_search/template", this);
         controller.registerHandler(POST, "/_search/template", this);
@@ -103,7 +107,7 @@ public class RestSearchTemplateAction extends BaseRestHandler {
 
         // Creates the search request with all required params
         SearchRequest searchRequest = new SearchRequest();
-        RestSearchAction.parseSearchRequest(searchRequest, request, searchRequestParsers, parseFieldMatcher, null);
+        RestSearchAction.parseSearchRequest(searchRequest, request, searchRequestParsers, xContentRegistry, parseFieldMatcher, null);
 
         // Creates the search template request
         SearchTemplateRequest searchTemplateRequest = parse(RestActions.getRestContent(request));

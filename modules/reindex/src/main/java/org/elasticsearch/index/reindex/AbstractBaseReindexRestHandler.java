@@ -25,6 +25,7 @@ import org.elasticsearch.action.support.ActiveShardCount;
 import org.elasticsearch.client.node.NodeClient;
 import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.rest.BaseRestHandler;
 import org.elasticsearch.rest.BytesRestResponse;
@@ -45,12 +46,14 @@ public abstract class AbstractBaseReindexRestHandler<
 
     protected final SearchRequestParsers searchRequestParsers;
     private final ClusterService clusterService;
+    protected final NamedXContentRegistry xContentRegistry;
     private final A action;
 
     protected AbstractBaseReindexRestHandler(Settings settings, SearchRequestParsers searchRequestParsers,
-                                             ClusterService clusterService, A action) {
+            NamedXContentRegistry xContentRegistry, ClusterService clusterService, A action) {
         super(settings);
         this.searchRequestParsers = searchRequestParsers;
+        this.xContentRegistry = xContentRegistry;
         this.clusterService = clusterService;
         this.action = action;
     }

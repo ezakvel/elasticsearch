@@ -32,6 +32,7 @@ import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.ObjectParser;
 import org.elasticsearch.common.xcontent.ObjectParser.ValueType;
 import org.elasticsearch.common.xcontent.ToXContent;
@@ -106,8 +107,8 @@ public class RestReindexAction extends AbstractBaseReindexRestHandler<ReindexReq
 
     @Inject
     public RestReindexAction(Settings settings, RestController controller,
-            SearchRequestParsers searchRequestParsers, ClusterService clusterService) {
-        super(settings, searchRequestParsers, clusterService, ReindexAction.INSTANCE);
+            SearchRequestParsers searchRequestParsers, NamedXContentRegistry xContentRegistry, ClusterService clusterService) {
+        super(settings, searchRequestParsers, xContentRegistry, clusterService, ReindexAction.INSTANCE);
         controller.registerHandler(POST, "/_reindex", this);
     }
 

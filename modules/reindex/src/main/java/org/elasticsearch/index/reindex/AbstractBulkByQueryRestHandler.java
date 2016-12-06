@@ -29,6 +29,7 @@ import org.elasticsearch.cluster.service.ClusterService;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
@@ -48,8 +49,8 @@ public abstract class AbstractBulkByQueryRestHandler<
         A extends GenericAction<Request, BulkIndexByScrollResponse>> extends AbstractBaseReindexRestHandler<Request, A> {
 
     protected AbstractBulkByQueryRestHandler(Settings settings, SearchRequestParsers searchRequestParsers,
-                                             ClusterService clusterService, A action) {
-        super(settings, searchRequestParsers, clusterService, action);
+            NamedXContentRegistry xContentRegistry, ClusterService clusterService, A action) {
+        super(settings, searchRequestParsers, xContentRegistry, clusterService, action);
     }
 
     protected void parseInternalRequest(Request internal, RestRequest restRequest,
@@ -108,6 +109,6 @@ public abstract class AbstractBulkByQueryRestHandler<
             }
         }
 
-        RestSearchAction.parseSearchRequest(searchRequest, restRequest, searchRequestParsers, parseFieldMatcher, content);
+        RestSearchAction.parseSearchRequest(searchRequest, restRequest, searchRequestParsers, xContentRegistry, parseFieldMatcher, content);
     }
 }
