@@ -32,7 +32,9 @@ import static java.util.Collections.emptyList;
 
 public class NamedXContentRegistryTests extends ESTestCase {
     public void testEmpty() throws IOException {
-        new NamedXContentRegistry(emptyList()); // does not throw exception
+        // does not throw exception but is otherwise fairly useless
+        NamedXContentRegistry registry = new NamedXContentRegistry(emptyList());
+        registry.wrap(null);
     }
 
     public void testBasic() throws IOException {
