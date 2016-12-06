@@ -22,6 +22,7 @@ package org.elasticsearch.common.xcontent.support;
 import org.apache.lucene.util.BytesRef;
 import org.elasticsearch.ElasticsearchParseException;
 import org.elasticsearch.common.Booleans;
+import org.elasticsearch.common.ParseFieldMatcherSupplier;
 import org.elasticsearch.common.xcontent.XContentParser;
 
 import java.io.IOException;
@@ -357,7 +358,7 @@ public abstract class AbstractXContentParser implements XContentParser {
     }
 
     @Override
-    public <T> T namedXContent(Class<T> type, String name, Object context) throws IOException {
+    public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException {
         throw new UnsupportedOperationException("can't read named xcontent without first wrapping with NamedXContentRegistry#wrap");
     }
 

@@ -20,6 +20,7 @@
 package org.elasticsearch.common.xcontent;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.ParseFieldMatcherSupplier;
 import org.elasticsearch.common.lease.Releasable;
 
 import java.io.IOException;
@@ -250,7 +251,7 @@ public interface XContentParser extends Releasable {
     XContentLocation getTokenLocation();
 
     // TODO remove context entirely when it isn't needed
-    <T> T namedXContent(Class<T> type, String name, Object context) throws IOException;
+    <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException;
 
     boolean isClosed();
 }

@@ -20,19 +20,19 @@
 package org.elasticsearch.common.xcontent;
 
 import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.common.ParseField;
+import org.elasticsearch.common.ParseFieldMatcher;
+import org.elasticsearch.common.ParseFieldMatcherSupplier;
 import org.elasticsearch.common.ParsingException;
 import org.elasticsearch.common.xcontent.support.DelegatingXContentParser;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
 import static java.util.Collections.unmodifiableMap;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.toMap;
 
 /**
  * Registry of "named" XContent parsers that can read using {@link XContentParser#namedXContent(Class, String, Object)}.
@@ -53,29 +53,42 @@ public class NamedXContentRegistry {
         public final Class<?> categoryClass;
 
         /** A name for the entry which is unique within the {@link #categoryClass}. */
-        public final String name;
+        public final ParseField name;
 
         /** A parser for which returns subclasses of {@link #categoryClass}. */
         public final FromXContent<?, ?> fromXContent;
 
         /** Creates a new entry which can be stored by the registry. */
-        public <T> Entry(Class<T> categoryClass, String name, FromXContent<? extends T, ?> fromXContent) {
+        public <T> Entry(Class<T> categoryClass, ParseField name, FromXContent<? extends T, ?> fromXContent) {
             this.categoryClass = Objects.requireNonNull(categoryClass);
             this.name = Objects.requireNonNull(name);
             this.fromXContent = Objects.requireNonNull(fromXContent);
         }
     }
     
-    private final Map<Class<?>, Map<String, FromXContent<?, ?>>> registry;
+    private final Map<Class<?>, Map<String, Entry>> registry;
 
     /**
      * Build the registry from a list of the entries that should be in it.
      */
     public NamedXContentRegistry(List<Entry> entries) {
-        registry = unmodifiableMap(entries.stream().collect(groupingBy(e -> e.categoryClass,
-                collectingAndThen(toMap(e -> e.name, e -> e.fromXContent, (name, fromXContent) -> {
-                    throw new IllegalArgumentException("[" + name + "] already registered");
-                }), Collections::unmodifiableMap))));
+        Map<Class<?>, Map<String, Entry>> registry = new HashMap<>();
+        for (Entry entry : entries) {
+            Map<String, Entry> parsers = registry.get(entry.categoryClass);
+            if (parsers == null) {
+                parsers = new HashMap<>();
+                registry.put(entry.categoryClass, parsers);
+            }
+            for (String name : entry.name.getAllNamesIncludedDeprecated()) {
+                Object old = parsers.putIfAbsent(name, entry);
+                if (old != null) {
+                    throw new IllegalArgumentException(
+                            "Duplicate named XContent parsers for [" + entry.categoryClass.getName() + "][" + entry.name + "]");
+                }
+            }
+        }
+        registry.replaceAll((categoryClass, map) -> unmodifiableMap(map));
+        this.registry = unmodifiableMap(registry);
     }
 
     /**
@@ -101,19 +114,21 @@ public class NamedXContentRegistry {
     /**
      * Lookup a reader, throwing an exception if the reader isn't found.
      */
-    private <T, C> FromXContent<? extends T, C> getFromXContent(Class<T> categoryClass, String name, XContentLocation location) {
-        Map<String, FromXContent<?, ?>> parsers = registry.get(categoryClass);
+    private <T, C> FromXContent<? extends T, C> getFromXContent(Class<T> categoryClass, String name, ParseFieldMatcher matcher,
+            XContentLocation location) {
+        Map<String, Entry> parsers = registry.get(categoryClass);
         if (parsers == null) {
             // UnsupportedOperationException because this is always a bug in Elasticsearch or a plugin
             throw new UnsupportedOperationException("Unknown NamedXContent category [" + categoryClass.getName() + "]");
         }
-        @SuppressWarnings("unchecked")
-        FromXContent<? extends T, C> reader = (FromXContent<? extends T, C>) parsers.get(name);
-        if (reader == null) {
+        Entry entry = parsers.get(name);
+        if (entry == null || false == matcher.match(name, entry.name)) {
             // ParsingException because this is *likely* a misspelled component in a user provided query
             throw new ParsingException(location, "Unknown NamedXContent [" + categoryClass.getName() + "][" + name + "]");
         }
-        return reader;
+        @SuppressWarnings("unchecked")
+        FromXContent<? extends T, C> fromXContent = (FromXContent<? extends T, C>) entry.fromXContent;
+        return fromXContent;
     }
 
     private static class WrappedParser extends DelegatingXContentParser {
@@ -125,8 +140,10 @@ public class NamedXContentRegistry {
         }
 
         @Override
-        public <T> T namedXContent(Class<T> categoryClass, String name, Object context) throws IOException {
-            return registry.getFromXContent(categoryClass, name, getTokenLocation()).fromXContent(this, context);
+        public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> categoryClass, String name, C context)
+                throws IOException {
+            return registry.getFromXContent(categoryClass, name, context.getParseFieldMatcher(), getTokenLocation())
+                    .fromXContent(this, context);
         }
     }
 }

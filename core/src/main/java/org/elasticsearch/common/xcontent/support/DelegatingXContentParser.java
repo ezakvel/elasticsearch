@@ -20,6 +20,7 @@
 package org.elasticsearch.common.xcontent.support;
 
 import org.apache.lucene.util.BytesRef;
+import org.elasticsearch.common.ParseFieldMatcherSupplier;
 import org.elasticsearch.common.xcontent.XContentLocation;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.XContentType;
@@ -230,7 +231,7 @@ public abstract class DelegatingXContentParser implements XContentParser {
     }
 
     @Override
-    public <T> T namedXContent(Class<T> type, String name, Object context) throws IOException {
+    public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException {
         return delegate.namedXContent(type, name, context);
     }
 
