@@ -27,6 +27,7 @@ import org.elasticsearch.common.settings.Setting;
 import org.elasticsearch.common.settings.Setting.Property;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.index.analysis.AnalysisRegistry;
 import org.elasticsearch.index.cache.query.DisabledQueryCache;
@@ -108,6 +109,7 @@ public final class IndexModule {
 
     private final IndexSettings indexSettings;
     private final AnalysisRegistry analysisRegistry;
+    private final NamedXContentRegistry xContentRegistry;
     // pkg private so tests can mock
     final SetOnce<EngineFactory> engineFactory = new SetOnce<>();
     private SetOnce<IndexSearcherWrapperFactory> indexSearcherWrapper = new SetOnce<>();
@@ -119,9 +121,10 @@ public final class IndexModule {
     private final List<IndexingOperationListener> indexOperationListeners = new ArrayList<>();
     private final AtomicBoolean frozen = new AtomicBoolean(false);
 
-    public IndexModule(IndexSettings indexSettings, AnalysisRegistry analysisRegistry) {
+    public IndexModule(IndexSettings indexSettings, AnalysisRegistry analysisRegistry, NamedXContentRegistry xContentRegistry) {
         this.indexSettings = indexSettings;
         this.analysisRegistry = analysisRegistry;
+        this.xContentRegistry = xContentRegistry;
         this.searchOperationListeners.add(new SearchSlowLog(indexSettings));
         this.indexOperationListeners.add(new IndexingSlowLog(indexSettings));
     }
@@ -364,8 +367,8 @@ public final class IndexModule {
         }
         return new IndexService(indexSettings, environment, new SimilarityService(indexSettings, similarities), shardStoreDeleter,
                 analysisRegistry, engineFactory.get(), circuitBreakerService, bigArrays, threadPool, scriptService, indicesQueriesRegistry,
-                clusterService, client, queryCache, store, eventListener, searcherWrapperFactory, mapperRegistry, indicesFieldDataCache,
-                globalCheckpointSyncer, searchOperationListeners, indexOperationListeners);
+                clusterService, client, queryCache, store, xContentRegistry, eventListener, searcherWrapperFactory, mapperRegistry,
+                indicesFieldDataCache, globalCheckpointSyncer, searchOperationListeners, indexOperationListeners);
     }
 
     /**
@@ -375,7 +378,7 @@ public final class IndexModule {
     public MapperService newIndexMapperService(MapperRegistry mapperRegistry) throws IOException {
         return new MapperService(indexSettings, analysisRegistry.build(indexSettings),
             new SimilarityService(indexSettings, similarities), mapperRegistry,
-            () -> { throw new UnsupportedOperationException("no index query shard context available"); });
+            () -> { throw new UnsupportedOperationException("no index query shard context available"); }, xContentRegistry);
     }
 
     /**

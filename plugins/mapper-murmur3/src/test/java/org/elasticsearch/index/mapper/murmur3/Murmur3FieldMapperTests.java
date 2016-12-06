@@ -26,6 +26,7 @@ import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.mapper.DocumentMapper;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.function.Supplier;
 
 import static com.carrotsearch.randomizedtesting.RandomizedTest.getRandom;
+import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.containsString;
 
 public class Murmur3FieldMapperTests extends ESSingleNodeTestCase {
@@ -63,8 +65,8 @@ public class Murmur3FieldMapperTests extends ESSingleNodeTestCase {
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
-        parser = new DocumentMapperParser(indexService.getIndexSettings(), indexService.mapperService(),
-                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+        parser = new DocumentMapperParser(indexService.getIndexSettings(), indexService.mapperService(), indexService.getIndexAnalyzers(),
+                indexService.similarityService(), mapperRegistry, queryShardContext, new NamedXContentRegistry(emptyList()));
     }
 
     @Override
@@ -160,8 +162,9 @@ public class Murmur3FieldMapperTests extends ESSingleNodeTestCase {
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService2x.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
-        DocumentMapperParser parser = new DocumentMapperParser(indexService2x.getIndexSettings(), indexService2x.mapperService(), indexService2x.getIndexAnalyzers(),
-            indexService2x.similarityService(), mapperRegistry, queryShardContext);
+        DocumentMapperParser parser = new DocumentMapperParser(indexService2x.getIndexSettings(), indexService2x.mapperService(),
+                indexService2x.getIndexAnalyzers(), indexService2x.similarityService(), mapperRegistry, queryShardContext,
+                new NamedXContentRegistry(emptyList()));
 
         DocumentMapper defaultMapper = parser.parse("type", new CompressedXContent(mapping));
         assertEquals(mapping, defaultMapper.mappingSource().string());

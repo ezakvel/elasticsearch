@@ -47,7 +47,8 @@ final class DocumentParser {
     private final DocumentMapperParser docMapperParser;
     private final DocumentMapper docMapper;
 
-    public DocumentParser(IndexSettings indexSettings, DocumentMapperParser docMapperParser, DocumentMapper docMapper) {
+    public DocumentParser(IndexSettings indexSettings, DocumentMapperParser docMapperParser,
+            DocumentMapper docMapper) {
         this.indexSettings = indexSettings;
         this.docMapperParser = docMapperParser;
         this.docMapper = docMapper;
@@ -58,7 +59,7 @@ final class DocumentParser {
 
         final Mapping mapping = docMapper.mapping();
         final ParseContext.InternalParseContext context;
-        try (XContentParser parser = XContentHelper.createParser(source.source())) {
+        try (XContentParser parser = docMapperParser.getXContentRegistry().wrap(XContentHelper.createParser(source.source()))) {
             context = new ParseContext.InternalParseContext(indexSettings.getSettings(),
                     docMapperParser, docMapper, source, parser);
             validateStart(parser);

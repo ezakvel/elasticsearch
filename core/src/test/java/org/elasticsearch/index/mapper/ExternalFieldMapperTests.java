@@ -26,6 +26,7 @@ import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.geo.GeoPoint;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.query.QueryShardContext;
@@ -41,6 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -64,7 +66,8 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
         DocumentMapperParser parser = new DocumentMapperParser(indexService.getIndexSettings(), indexService.mapperService(),
-                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext,
+                new NamedXContentRegistry(emptyList()));
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type")
                 .startObject(ExternalMetadataMapper.CONTENT_TYPE)
@@ -112,7 +115,8 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
         DocumentMapperParser parser = new DocumentMapperParser(indexService.getIndexSettings(), indexService.mapperService(),
-                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext,
+                new NamedXContentRegistry(emptyList()));
 
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type").startObject("properties")
@@ -175,7 +179,8 @@ public class ExternalFieldMapperTests extends ESSingleNodeTestCase {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
         DocumentMapperParser parser = new DocumentMapperParser(indexService.getIndexSettings(), indexService.mapperService(),
-                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext,
+                new NamedXContentRegistry(emptyList()));
 
         DocumentMapper documentMapper = parser.parse("type", new CompressedXContent(
                 XContentFactory.jsonBuilder().startObject().startObject("type").startObject("properties")

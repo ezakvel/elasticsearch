@@ -25,6 +25,7 @@ import org.apache.lucene.index.IndexableField;
 import org.elasticsearch.common.bytes.BytesArray;
 import org.elasticsearch.common.compress.CompressedXContent;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.IndexService;
 import org.elasticsearch.index.query.QueryShardContext;
@@ -40,6 +41,8 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Supplier;
+
+import static java.util.Collections.emptyList;
 
 public class FieldNamesFieldMapperTests extends ESSingleNodeTestCase {
 
@@ -236,9 +239,11 @@ public class FieldNamesFieldMapperTests extends ESSingleNodeTestCase {
         Supplier<QueryShardContext> queryShardContext = () -> {
             return indexService.newQueryShardContext(0, null, () -> { throw new UnsupportedOperationException(); });
         };
-        MapperService mapperService = new MapperService(indexService.getIndexSettings(), indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+        MapperService mapperService = new MapperService(indexService.getIndexSettings(), indexService.getIndexAnalyzers(),
+                indexService.similarityService(), mapperRegistry, queryShardContext, new NamedXContentRegistry(emptyList()));
         DocumentMapperParser parser = new DocumentMapperParser(indexService.getIndexSettings(), mapperService,
-                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext);
+                indexService.getIndexAnalyzers(), indexService.similarityService(), mapperRegistry, queryShardContext,
+                new NamedXContentRegistry(emptyList()));
         String mapping = XContentFactory.jsonBuilder().startObject().startObject("type").endObject().endObject().string();
         DocumentMapper mapper = parser.parse("type", new CompressedXContent(mapping));
         ParsedDocument parsedDocument = mapper.parse("index", "type", "id", new BytesArray("{}"));

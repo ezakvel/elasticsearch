@@ -372,7 +372,7 @@ public class Node implements Closeable {
             final MetaStateService metaStateService = new MetaStateService(settings, nodeEnvironment);
             final IndicesService indicesService = new IndicesService(settings, pluginsService, nodeEnvironment,
                 settingsModule.getClusterSettings(), analysisModule.getAnalysisRegistry(), searchModule.getQueryParserRegistry(),
-                clusterModule.getIndexNameExpressionResolver(), indicesModule.getMapperRegistry(), namedWriteableRegistry,
+                clusterModule.getIndexNameExpressionResolver(), indicesModule.getMapperRegistry(), namedWriteableRegistry, xContentRegistry,
                 threadPool, settingsModule.getIndexScopedSettings(), circuitBreakerService, bigArrays, scriptModule.getScriptService(),
                 clusterService, client, metaStateService);
 

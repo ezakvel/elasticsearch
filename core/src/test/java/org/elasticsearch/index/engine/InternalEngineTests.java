@@ -82,6 +82,7 @@ import org.elasticsearch.common.lucene.uid.Versions;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.BigArrays;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.index.Index;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.VersionType;
@@ -152,6 +153,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.PRIMARY;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.REPLICA;
@@ -2288,7 +2290,8 @@ public class InternalEngineTests extends ESTestCase {
             IndexAnalyzers indexAnalyzers = new IndexAnalyzers(indexSettings, defaultAnalyzer, defaultAnalyzer, defaultAnalyzer, Collections.emptyMap());
             SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
             MapperRegistry mapperRegistry = new IndicesModule(Collections.emptyList()).getMapperRegistry();
-            mapperService = new MapperService(indexSettings, indexAnalyzers, similarityService, mapperRegistry, () -> null);
+            mapperService = new MapperService(indexSettings, indexAnalyzers, similarityService, mapperRegistry, () -> null,
+                    new NamedXContentRegistry(emptyList()));
         }
 
         @Override

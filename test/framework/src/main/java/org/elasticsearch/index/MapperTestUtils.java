@@ -22,6 +22,7 @@ package org.elasticsearch.index;
 import org.elasticsearch.Version;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
 import org.elasticsearch.index.mapper.MapperService;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
 
+import static java.util.Collections.emptyList;
 import static org.elasticsearch.test.ESTestCase.createTestAnalysis;
 
 
@@ -60,6 +62,7 @@ public class MapperTestUtils {
             indexAnalyzers,
             similarityService,
             mapperRegistry,
-            () -> null);
+            () -> null,
+            new NamedXContentRegistry(emptyList()));
     }
 }

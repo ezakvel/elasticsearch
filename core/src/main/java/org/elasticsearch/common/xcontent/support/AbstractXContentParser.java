@@ -358,7 +358,7 @@ public abstract class AbstractXContentParser implements XContentParser {
 
     @Override
     public <T> T namedXContent(Class<T> type, String name, Object context) throws IOException {
-        throw new UnsupportedOperationException("can't read named xconent from AbstractXContent. Wrap in NamedXContentAwareXContentParser");
+        throw new UnsupportedOperationException("can't read named xconent without first wrapping with NamedXContentRegistry#wrap");
     }
 
     @Override

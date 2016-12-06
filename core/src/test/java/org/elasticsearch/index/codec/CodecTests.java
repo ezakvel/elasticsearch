@@ -35,6 +35,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.util.LuceneTestCase.SuppressCodecs;
 import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.index.IndexSettings;
 import org.elasticsearch.index.analysis.IndexAnalyzers;
@@ -47,6 +48,7 @@ import org.elasticsearch.test.IndexSettingsModule;
 import java.io.IOException;
 import java.util.Collections;
 
+import static java.util.Collections.emptyList;
 import static org.hamcrest.Matchers.instanceOf;
 
 @SuppressCodecs("*") // we test against default codec so never get a random one here!
@@ -97,7 +99,8 @@ public class CodecTests extends ESTestCase {
         SimilarityService similarityService = new SimilarityService(settings, Collections.emptyMap());
         IndexAnalyzers indexAnalyzers = createTestAnalysis(settings, nodeSettings).indexAnalyzers;
         MapperRegistry mapperRegistry = new MapperRegistry(Collections.emptyMap(), Collections.emptyMap());
-        MapperService service = new MapperService(settings, indexAnalyzers, similarityService, mapperRegistry, () -> null);
+        MapperService service = new MapperService(settings, indexAnalyzers, similarityService,
+                mapperRegistry, () -> null, new NamedXContentRegistry(emptyList()));
         return new CodecService(service, ESLoggerFactory.getLogger("test"));
     }
 

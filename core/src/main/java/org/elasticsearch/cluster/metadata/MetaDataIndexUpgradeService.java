@@ -146,7 +146,8 @@ public class MetaDataIndexUpgradeService extends AbstractComponent {
                 }
             };
             try (IndexAnalyzers fakeIndexAnalzyers = new IndexAnalyzers(indexSettings, fakeDefault, fakeDefault, fakeDefault, analyzerMap)) {
-                MapperService mapperService = new MapperService(indexSettings, fakeIndexAnalzyers, similarityService, mapperRegistry, () -> null);
+                MapperService mapperService = new MapperService(indexSettings, fakeIndexAnalzyers, similarityService, mapperRegistry,
+                        () -> null, null);
                 for (ObjectCursor<MappingMetaData> cursor : indexMetaData.getMappings().values()) {
                     MappingMetaData mappingMetaData = cursor.value;
                     mapperService.merge(mappingMetaData.type(), mappingMetaData.source(), MapperService.MergeReason.MAPPING_RECOVERY, false);

@@ -104,7 +104,7 @@ public class ParentFieldMapperTests extends ESSingleNodeTestCase {
             Collections.emptyMap());
         SimilarityService similarityService = new SimilarityService(indexSettings, Collections.emptyMap());
         MapperService mapperService = new MapperService(indexSettings, indexAnalyzers, similarityService,
-            new IndicesModule(emptyList()).getMapperRegistry(), () -> null);
+            new IndicesModule(emptyList()).getMapperRegistry(), () -> null, null);
         XContentBuilder mappingSource = jsonBuilder().startObject().startObject("some_type")
             .startObject("properties")
             .endObject()

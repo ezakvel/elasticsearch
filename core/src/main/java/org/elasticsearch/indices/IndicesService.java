@@ -68,6 +68,7 @@ import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.Callback;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.common.util.iterable.Iterables;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.ShardLock;
@@ -170,6 +171,7 @@ public class IndicesService extends AbstractLifecycleComponent
     private final OldShardsStats oldShardsStats = new OldShardsStats();
     private final MapperRegistry mapperRegistry;
     private final NamedWriteableRegistry namedWriteableRegistry;
+    private final NamedXContentRegistry xContentRegistry;
     private final IndexingMemoryController indexingMemoryController;
     private final TimeValue cleanInterval;
     private final IndicesRequestCache indicesRequestCache;
@@ -182,13 +184,12 @@ public class IndicesService extends AbstractLifecycleComponent
         threadPool.schedule(this.cleanInterval, ThreadPool.Names.SAME, this.cacheCleaner);
     }
 
-    public IndicesService(Settings settings, PluginsService pluginsService, NodeEnvironment nodeEnv,
-                          ClusterSettings clusterSettings, AnalysisRegistry analysisRegistry,
-                          IndicesQueriesRegistry indicesQueriesRegistry, IndexNameExpressionResolver indexNameExpressionResolver,
-                          MapperRegistry mapperRegistry, NamedWriteableRegistry namedWriteableRegistry,
-                          ThreadPool threadPool, IndexScopedSettings indexScopedSettings, CircuitBreakerService circuitBreakerService,
-                          BigArrays bigArrays, ScriptService scriptService, ClusterService clusterService, Client client,
-                          MetaStateService metaStateService) {
+    public IndicesService(Settings settings, PluginsService pluginsService, NodeEnvironment nodeEnv, ClusterSettings clusterSettings,
+            AnalysisRegistry analysisRegistry, IndicesQueriesRegistry indicesQueriesRegistry,
+            IndexNameExpressionResolver indexNameExpressionResolver, MapperRegistry mapperRegistry,
+            NamedWriteableRegistry namedWriteableRegistry, NamedXContentRegistry xContentRegistry, ThreadPool threadPool,
+            IndexScopedSettings indexScopedSettings, CircuitBreakerService circuitBreakerService, BigArrays bigArrays,
+            ScriptService scriptService, ClusterService clusterService, Client client, MetaStateService metaStateService) {
         super(settings);
         this.threadPool = threadPool;
         this.pluginsService = pluginsService;
@@ -201,6 +202,7 @@ public class IndicesService extends AbstractLifecycleComponent
         this.indicesQueryCache = new IndicesQueryCache(settings);
         this.mapperRegistry = mapperRegistry;
         this.namedWriteableRegistry = namedWriteableRegistry;
+        this.xContentRegistry = xContentRegistry;
         indexingMemoryController = new IndexingMemoryController(settings, threadPool,
                                                                 // ensure we pull an iter with new shards - flatten makes a copy
                                                                 () -> Iterables.flatten(this).iterator());
@@ -425,7 +427,6 @@ public class IndicesService extends AbstractLifecycleComponent
                                                          List<IndexEventListener> builtInListeners,
                                                          Consumer<ShardId> globalCheckpointSyncer,
                                                          IndexingOperationListener... indexingOperationListeners) throws IOException {
-        final Index index = indexMetaData.getIndex();
         final IndexSettings idxSettings = new IndexSettings(indexMetaData, this.settings, indexScopeSetting);
         logger.debug("creating Index [{}], shards [{}]/[{}{}] - reason [{}]",
             indexMetaData.getIndex(),
@@ -433,7 +434,7 @@ public class IndicesService extends AbstractLifecycleComponent
             idxSettings.getNumberOfReplicas(),
             idxSettings.isShadowReplicaIndex() ? "s" : "", reason);
 
-        final IndexModule indexModule = new IndexModule(idxSettings, analysisRegistry);
+        final IndexModule indexModule = new IndexModule(idxSettings, analysisRegistry, xContentRegistry);
         for (IndexingOperationListener operationListener : indexingOperationListeners) {
             indexModule.addIndexOperationListener(operationListener);
         }
@@ -465,7 +466,7 @@ public class IndicesService extends AbstractLifecycleComponent
      */
     public synchronized MapperService createIndexMapperService(IndexMetaData indexMetaData) throws IOException {
         final IndexSettings idxSettings = new IndexSettings(indexMetaData, this.settings, indexScopeSetting);
-        final IndexModule indexModule = new IndexModule(idxSettings, analysisRegistry);
+        final IndexModule indexModule = new IndexModule(idxSettings, analysisRegistry, xContentRegistry);
         pluginsService.onIndexModule(indexModule);
         return indexModule.newIndexMapperService(mapperRegistry);
     }

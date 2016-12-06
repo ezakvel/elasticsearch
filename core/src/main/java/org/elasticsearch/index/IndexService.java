@@ -34,6 +34,7 @@ import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.BigArrays;
 import org.elasticsearch.common.util.concurrent.FutureUtils;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.env.NodeEnvironment;
 import org.elasticsearch.env.ShardLock;
 import org.elasticsearch.env.ShardLockObtainFailedException;
@@ -136,6 +137,7 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
                         Client client,
                         QueryCache queryCache,
                         IndexStore indexStore,
+                        NamedXContentRegistry xContentRegistry,
                         IndexEventListener eventListener,
                         IndexModule.IndexSearcherWrapperFactory wrapperFactory,
                         MapperRegistry mapperRegistry,
@@ -147,11 +149,13 @@ public class IndexService extends AbstractIndexComponent implements IndicesClust
         this.indexSettings = indexSettings;
         this.globalCheckpointSyncer = globalCheckpointSyncer;
         this.similarityService = similarityService;
-        this.mapperService = new MapperService(indexSettings, registry.build(indexSettings), similarityService, mapperRegistry,
-            // we parse all percolator queries as they would be parsed on shard 0
-            () -> newQueryShardContext(0, null, () -> {
-                throw new IllegalArgumentException("Percolator queries are not allowed to use the current timestamp");
-            }));
+        this.mapperService = new MapperService(indexSettings, registry.build(indexSettings), similarityService,
+                mapperRegistry,
+                // we parse all percolator queries as they would be parsed on shard 0
+                () -> newQueryShardContext(0, null, () -> {
+                    throw new IllegalArgumentException("Percolator queries are not allowed to use the current timestamp");
+                }),
+                xContentRegistry);
         this.indexFieldData = new IndexFieldDataService(indexSettings, indicesFieldDataCache, circuitBreakerService, mapperService);
         this.shardStoreDeleter = shardStoreDeleter;
         this.bigArrays = bigArrays;

@@ -24,6 +24,7 @@ import org.elasticsearch.common.Nullable;
 import org.elasticsearch.common.ParseFieldMatcher;
 import org.elasticsearch.common.collect.Tuple;
 import org.elasticsearch.common.compress.CompressedXContent;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.common.xcontent.XContentHelper;
 import org.elasticsearch.common.xcontent.XContentParser;
@@ -42,6 +43,7 @@ import static java.util.Collections.unmodifiableMap;
 
 public class DocumentMapperParser {
 
+    private final NamedXContentRegistry xContentRegistry;
     final MapperService mapperService;
     final IndexAnalyzers indexAnalyzers;
     private final SimilarityService similarityService;
@@ -55,14 +57,15 @@ public class DocumentMapperParser {
     private final Map<String, Mapper.TypeParser> typeParsers;
     private final Map<String, MetadataFieldMapper.TypeParser> rootTypeParsers;
 
-    public DocumentMapperParser(IndexSettings indexSettings, MapperService mapperService, IndexAnalyzers indexAnalyzers,
-                                SimilarityService similarityService, MapperRegistry mapperRegistry,
-                                Supplier<QueryShardContext> queryShardContextSupplier) {
+    public DocumentMapperParser(IndexSettings indexSettings, MapperService mapperService,
+            IndexAnalyzers indexAnalyzers, SimilarityService similarityService, MapperRegistry mapperRegistry,
+            Supplier<QueryShardContext> queryShardContextSupplier, NamedXContentRegistry xContentRegistry) {
         this.parseFieldMatcher = new ParseFieldMatcher(indexSettings.getSettings());
         this.mapperService = mapperService;
         this.indexAnalyzers = indexAnalyzers;
         this.similarityService = similarityService;
         this.queryShardContextSupplier = queryShardContextSupplier;
+        this.xContentRegistry = xContentRegistry;
         this.typeParsers = mapperRegistry.getMapperParsers();
         this.rootTypeParsers = mapperRegistry.getMetadataMapperParsers();
         indexVersionCreated = indexSettings.getIndexVersionCreated();
@@ -134,6 +137,13 @@ public class DocumentMapperParser {
         checkNoRemainingFields(mapping, parserContext.indexVersionCreated(), "Root mapping definition has unsupported parameters: ");
 
         return docBuilder.build(mapperService);
+    }
+
+    /**
+     * Get the {@link NamedXContentRegistry} used to help parse documents.
+     */
+    NamedXContentRegistry getXContentRegistry() {
+        return xContentRegistry;
     }
 
     public static void checkNoRemainingFields(String fieldName, Map<?, ?> fieldNodeMap, Version indexVersionCreated) {
