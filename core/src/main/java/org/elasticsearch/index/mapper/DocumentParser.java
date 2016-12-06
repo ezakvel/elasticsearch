@@ -59,6 +59,8 @@ final class DocumentParser {
 
         final Mapping mapping = docMapper.mapping();
         final ParseContext.InternalParseContext context;
+        /* Wrapping the parser is only important for the percolator but the percolator doesn't have a fancy way to "sneak" the wrapping onto
+         * the parser so we wrap here as though all documents might use it. */
         try (XContentParser parser = docMapperParser.getXContentRegistry().wrap(XContentHelper.createParser(source.source()))) {
             context = new ParseContext.InternalParseContext(indexSettings.getSettings(),
                     docMapperParser, docMapper, source, parser);
