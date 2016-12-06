@@ -358,7 +358,7 @@ public abstract class AbstractXContentParser implements XContentParser {
     }
 
     @Override
-    public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException {
+    public <T, C extends ParseFieldMatcherSupplier> T namedObject(Class<T> type, String name, C context) throws IOException {
         throw new UnsupportedOperationException("can't read named xcontent without first wrapping with NamedXContentRegistry#wrap");
     }
 

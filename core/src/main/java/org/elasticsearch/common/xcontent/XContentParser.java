@@ -260,7 +260,7 @@ public interface XContentParser extends Releasable {
      * @return the fully read object
      * @throws IOException thrown if the parser throws the exception
      */
-    <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException;
+    <T, C extends ParseFieldMatcherSupplier> T namedObject(Class<T> type, String name, C context) throws IOException;
 
     boolean isClosed();
 }

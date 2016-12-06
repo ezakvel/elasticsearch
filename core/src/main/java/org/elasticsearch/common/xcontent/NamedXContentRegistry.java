@@ -35,7 +35,7 @@ import java.util.Objects;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Registry of "named" XContent parsers that can read using {@link XContentParser#namedXContent(Class, String, Object)}.
+ * Registry of "named" XContent parsers that can read using {@link XContentParser#namedObject(Class, String, Object)}.
  */
 public class NamedXContentRegistry {
     /**
@@ -92,7 +92,7 @@ public class NamedXContentRegistry {
     }
 
     /**
-     * Wrap an {@link XContentParser} in one that implements {@link XContentParser#namedXContent(Class, String, Object)} against this
+     * Wrap an {@link XContentParser} in one that implements {@link XContentParser#namedObject(Class, String, Object)} against this
      * registry.
      */
     public XContentParser wrap(XContentParser parser) {
@@ -142,7 +142,7 @@ public class NamedXContentRegistry {
         }
 
         @Override
-        public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> categoryClass, String name, C context) throws IOException {
+        public <T, C extends ParseFieldMatcherSupplier> T namedObject(Class<T> categoryClass, String name, C context) throws IOException {
             return categoryClass.cast(registry.getFromXContent(categoryClass, name, context.getParseFieldMatcher(), getTokenLocation())
                     .fromXContent(this, context));
         }

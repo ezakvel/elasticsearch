@@ -231,8 +231,8 @@ public abstract class DelegatingXContentParser implements XContentParser {
     }
 
     @Override
-    public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException {
-        return delegate.namedXContent(type, name, context);
+    public <T, C extends ParseFieldMatcherSupplier> T namedObject(Class<T> type, String name, C context) throws IOException {
+        return delegate.namedObject(type, name, context);
     }
 
     @Override

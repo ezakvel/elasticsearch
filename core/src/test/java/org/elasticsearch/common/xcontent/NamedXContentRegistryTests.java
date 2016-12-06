@@ -42,18 +42,18 @@ public class NamedXContentRegistryTests extends ESTestCase {
                 new NamedXContentRegistry.Entry(Object.class, new ParseField("test1"), (p, c) -> test1),
                 new NamedXContentRegistry.Entry(Object.class, new ParseField("test2", "test_2"), (p, c) -> test2)));
         XContentParser parser = registry.wrap(JsonXContent.jsonXContent.createParser("{}"));
-        assertEquals(test1, parser.namedXContent(Object.class, "test1", () -> ParseFieldMatcher.EMPTY));
-        assertEquals(test2, parser.namedXContent(Object.class, "test2", () -> ParseFieldMatcher.EMPTY));
-        assertEquals(test2, parser.namedXContent(Object.class, "test_2", () -> ParseFieldMatcher.EMPTY));
+        assertEquals(test1, parser.namedObject(Object.class, "test1", () -> ParseFieldMatcher.EMPTY));
+        assertEquals(test2, parser.namedObject(Object.class, "test2", () -> ParseFieldMatcher.EMPTY));
+        assertEquals(test2, parser.namedObject(Object.class, "test_2", () -> ParseFieldMatcher.EMPTY));
 
         Exception e;
         e = expectThrows(IllegalArgumentException.class, () ->
-            parser.namedXContent(Object.class, "test_2", () -> ParseFieldMatcher.STRICT));
+            parser.namedObject(Object.class, "test_2", () -> ParseFieldMatcher.STRICT));
         assertEquals("Deprecated field [test_2] used, expected [test2] instead", e.getMessage());
         e = expectThrows(UnsupportedOperationException.class, () ->
-            parser.namedXContent(NamedXContentRegistry.class, "test2", () -> ParseFieldMatcher.EMPTY));
+            parser.namedObject(NamedXContentRegistry.class, "test2", () -> ParseFieldMatcher.EMPTY));
         assertEquals("Unknown NamedXContent category [" + NamedXContentRegistry.class.getName() + "]", e.getMessage());
-        e = expectThrows(ParsingException.class, () -> parser.namedXContent(Object.class, "dne", () -> ParseFieldMatcher.EMPTY));
+        e = expectThrows(ParsingException.class, () -> parser.namedObject(Object.class, "dne", () -> ParseFieldMatcher.EMPTY));
         assertEquals("Unknown NamedXContent [java.lang.Object][dne]", e.getMessage());
     }
 
