@@ -649,7 +649,7 @@ public class SearchModule {
     private void registerScoreFunction(ScoreFunctionSpec<?> scoreFunction) {
         namedWriteables.add(new NamedWriteableRegistry.Entry(
                 ScoreFunctionBuilder.class, scoreFunction.getName().getPreferredName(), scoreFunction.getReader()));
-        // TODO remove funky contexts
+        // Hopefully temporary adapter while we replace QueryParseContext with NamedXContent.
         namedXContents.add(new NamedXContentRegistry.Entry(ScoreFunctionBuilder.class, scoreFunction.getName(),
                 (XContentParser p, QueryParseContext c) -> scoreFunction.getParser().fromXContent(c)));
     }

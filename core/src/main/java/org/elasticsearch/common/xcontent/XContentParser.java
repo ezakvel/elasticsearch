@@ -250,7 +250,16 @@ public interface XContentParser extends Releasable {
      */
     XContentLocation getTokenLocation();
 
-    // TODO remove context entirely when it isn't needed
+    /**
+     * Lookup a parser and use it to parser an object.
+     *
+     * @param type superclass of the object to read
+     * @param name name of the subclass of {@code type} to look up
+     * @param context context used to parse the object. This should be removed when all named objects have been migrated to being read using
+     *        this method
+     * @return the fully read object
+     * @throws IOException thrown if the parser throws the exception
+     */
     <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> type, String name, C context) throws IOException;
 
     boolean isClosed();

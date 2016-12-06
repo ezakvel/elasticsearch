@@ -114,7 +114,7 @@ public class NamedXContentRegistry {
     /**
      * Lookup a reader, throwing an exception if the reader isn't found.
      */
-    private <T, C> FromXContent<? extends T, C> getFromXContent(Class<T> categoryClass, String name, ParseFieldMatcher matcher,
+    private <C> FromXContent<?, C> getFromXContent(Class<?> categoryClass, String name, ParseFieldMatcher matcher,
             XContentLocation location) {
         Map<String, Entry> parsers = registry.get(categoryClass);
         if (parsers == null) {
@@ -126,8 +126,10 @@ public class NamedXContentRegistry {
             // ParsingException because this is *likely* a misspelled component in a user provided query
             throw new ParsingException(location, "Unknown NamedXContent [" + categoryClass.getName() + "][" + name + "]");
         }
+        /* Safe-ish because we check the cast to C when we call fromXContent and because we're going to try and remove the context
+         * entirely. */
         @SuppressWarnings("unchecked")
-        FromXContent<? extends T, C> fromXContent = (FromXContent<? extends T, C>) entry.fromXContent;
+        FromXContent<?, C> fromXContent = (FromXContent<?, C>) entry.fromXContent;
         return fromXContent;
     }
 
@@ -140,10 +142,9 @@ public class NamedXContentRegistry {
         }
 
         @Override
-        public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> categoryClass, String name, C context)
-                throws IOException {
-            return registry.getFromXContent(categoryClass, name, context.getParseFieldMatcher(), getTokenLocation())
-                    .fromXContent(this, context);
+        public <T, C extends ParseFieldMatcherSupplier> T namedXContent(Class<T> categoryClass, String name, C context) throws IOException {
+            return categoryClass.cast(registry.getFromXContent(categoryClass, name, context.getParseFieldMatcher(), getTokenLocation())
+                    .fromXContent(this, context));
         }
     }
 }
