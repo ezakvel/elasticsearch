@@ -23,6 +23,7 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.common.ParseFieldMatcher;
 import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.common.xcontent.NamedXContentRegistry;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentParser;
 import org.elasticsearch.common.xcontent.json.JsonXContent;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static org.elasticsearch.common.unit.TimeValue.timeValueSeconds;
 
 public class RestReindexActionTests extends ESTestCase {
@@ -118,7 +120,7 @@ public class RestReindexActionTests extends ESTestCase {
             b.endObject();
             request = b.bytes();
         }
-        try (XContentParser p = JsonXContent.jsonXContent.createParser(request)) {
+        try (XContentParser p = new NamedXContentRegistry(emptyList()).wrap(JsonXContent.jsonXContent.createParser(request))) {
             ReindexRequest r = new ReindexRequest(new SearchRequest(), new IndexRequest());
             SearchRequestParsers searchParsers = new SearchRequestParsers(new IndicesQueriesRegistry(), null, null, null);
             RestReindexAction.PARSER.parse(p, r, new ReindexParseContext(searchParsers, ParseFieldMatcher.STRICT));
